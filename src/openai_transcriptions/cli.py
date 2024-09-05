@@ -65,7 +65,7 @@ def process_page(pdf_path, page_number, lang='ita', num_cores=None):
             click.echo(f"Performing OCR on the page using language: {lang}")
             config = f'--oem 3 --psm 6 -l {lang}'
             if num_cores:
-                config += f' --tessdata-dir /usr/share/tesseract-ocr/4.00/tessdata -c tessedit_do_invert=0 -c tessedit_create_hocr=1 -c tessedit_create_txt=1 -c tessedit_pageseg_mode=1 -c tessedit_ocr_engine_mode=2 -c tessedit_thread_count={num_cores}'
+                config += f' -c tessedit_thread_count={num_cores}'
             text = pytesseract.image_to_string(tiff_path, config=config)
             with open(ocr_text_path, 'w', encoding='utf-8') as f:
                 f.write(text)
