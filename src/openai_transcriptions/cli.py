@@ -29,100 +29,79 @@ def get_default_cores():
     total_cores = multiprocessing.cpu_count()
     return max(1, total_cores - 2)  # Ensure at least 1 core is used
 
+import requests
+import json
+import base64
+import os
+
 def submit_to_chatgpt(image_path, ocr_text, destination_path):
-    """Sumbit the image and the OCR text to ChatGPT using our PROMPT.
-    Does something similar to this:
+    """Submit the image and the OCR text to ChatGPT using our PROMPT."""
+    OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
+    if not OPENAI_API_KEY:
+        raise ValueError("OPENAI_API_KEY environment variable is not set")
 
-    import requests
-    import json
-
-    # Replace with your actual OpenAI API key
-    OPENAI_API_KEY = 'your-api-key'
-
-    # The path to the image file you want to upload
-    image_path = '/path/to/your/image.jpg'
-
-    # Step 1: Upload the image to the OpenAI API
-
-    def upload_image(image_path):
-        url = "https://api.openai.com/v1/files"
-        headers = {
-            "Authorization": f"Bearer {OPENAI_API_KEY}"
-        }
-
-        with open(image_path, 'rb') as file:
-            files = {
-                'file': file,
-            }
-            data = {
-                'purpose': 'vision'
-            }
-            response = requests.post(url, headers=headers, files=files, data=data)
-
-        if response.status_code == 200:
-            print("Image uploaded successfully!")
-            return response.json()['id']  # Return the file ID for further use
-        else:
-            print(f"Failed to upload image. Status code: {response.status_code}")
-            print("Response:", response.text)
-            return None
-
-    # Step 2: Use the chat/completions endpoint to ask "What's in this image?"
-
-    def ask_about_image(file_id):
-        url = "https://api.openai.com/v1/chat/completions"
-        headers = {
-            "Authorization": f"Bearer {OPENAI_API_KEY}",
-            "Content-Type": "application/json"
-        }
-
-        # JSON payload for the chat request
-        data = {
-            "model": "gpt-4-vision",  # Assuming vision-capable model (replace as needed)
-            "messages": [
-                {
-                    "role": "user",
-                    "content": "What's in this image?",
-                    "function_call": {
-                        "name": "describe_image",
-                        "arguments": {
-                            "file_id": file_id
-                        }
-                    }
-                }
-            ],
-            "max_tokens": 300
-        }
-
-        response = requests.post(url, headers=headers, data=json.dumps(data))
-
-        if response.status_code == 200:
-            return response.json()
-        else:
-            print(f"Failed to process the image. Status code: {response.status_code}")
-            print("Response:", response.text)
-            return None
-
-    # Running the full process
-
-    # Upload the image and get the file ID
-    file_id = upload_image(image_path)
-
-    if file_id:
-        # Use the file ID to ask the question
-        result = ask_about_image(file_id)
-        if result:
-            print("Response from chat API:", result)
-
-
-    """
     with Image.open(image_path) as img:
         width, height = img.size
     click.echo(f"Image size: {width}x{height} pixels")
     click.echo(f"OCRed text length: {len(ocr_text)} characters")
-    click.echo("Uploading the file")
-    click.echo("Getting transcription from ChatGPT")
-    click.echo(f"Transcription saved to {destination_path}")
+
+    # Encode the image
+    with open(image_path, "rb") as image_file:
+        encoded_image = base64.b64encode(image_file.read()).decode('utf-8')
+
+    click.echo("Uploading the file and getting transcription from ChatGPT")
+
+    url = "https://api.openai.com/v1/chat/completions"
+    headers = {
+        "Authorization": f"Bearer {OPENAI_API_KEY}",
+        "Content-Type": "application/json"
+    }
+
+    # Prepare the messages
+    messages = [
+        {
+            "role": "system",
+            "content": "You are an expert in analyzing documents and images. Your task is to provide a detailed transcription and analysis of the image provided, considering both the visual content and the OCR text."
+        },
+        {
+            "role": "user",
+            "content": [
+                {
+                    "type": "text",
+                    "text": f"Here's the OCR text extracted from the image:\n\n{ocr_text}\n\nPlease analyze the image and provide a detailed transcription, correcting any OCR errors and formatting issues. Also, describe any visual elements present in the image."
+                },
+                {
+                    "type": "image_url",
+                    "image_url": {
+                        "url": f"data:image/jpeg;base64,{encoded_image}"
+                    }
+                }
+            ]
+        }
+    ]
+
+    # Prepare the payload
+    payload = {
+        "model": "gpt-4-vision-preview",
+        "messages": messages,
+        "max_tokens": 500
+    }
+
+    # Make the API call
+    response = requests.post(url, headers=headers, json=payload)
+
+    if response.status_code == 200:
+        result = response.json()
+        transcription = result['choices'][0]['message']['content']
+        
+        # Save the transcription to the destination file
+        with open(destination_path, 'w', encoding='utf-8') as f:
+            f.write(transcription)
+        
+        click.echo(f"Transcription saved to {destination_path}")
+    else:
+        click.echo(f"Error: Unable to get transcription. Status code: {response.status_code}")
+        click.echo(f"Response: {response.text}")
 
 def process_page(pdf_path, page_number, lang='ita', num_cores=None):
     """Process a single page of a PDF file."""
