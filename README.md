@@ -63,4 +63,4 @@ The tool will create a directory with the same name as the input PDF file, conta
 
 ## License
 
-This project is licensed under the GNU General Public License (GPL).
+This project is licensed under the GNU General Public License v3 (GPLv3). This means you are free to use, modify, and distribute this software, but any derivative work must also be distributed under the same license. For more details, see the [LICENSE.txt](LICENSE.txt) file in the project repository or visit [https://www.gnu.org/licenses/gpl-3.0.en.html](https://www.gnu.org/licenses/gpl-3.0.en.html).
