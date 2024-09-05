@@ -1,9 +1,27 @@
 import click
+import tempfile
+import os
 from PyPDF2 import PdfReader
+from pdf2image import convert_from_path
 
 def process_page(pdf_path, page_number):
     """Process a single page of a PDF file."""
     click.echo(f"Processing page {page_number} of {pdf_path}")
+    
+    # Create a temporary directory to store the TIFF file
+    with tempfile.TemporaryDirectory() as temp_dir:
+        # Convert the specific page to an image with a height of 3000 pixels
+        images = convert_from_path(pdf_path, first_page=page_number, last_page=page_number, size=(None, 3000))
+        
+        if images:
+            # Save the image as a TIFF file
+            tiff_path = os.path.join(temp_dir, f"page_{page_number}.tiff")
+            images[0].save(tiff_path, format="TIFF")
+            click.echo(f"Created temporary TIFF file: {tiff_path}")
+            
+            # TODO: Add further processing of the TIFF file here
+        else:
+            click.echo(f"Failed to convert page {page_number} to image")
 
 @click.command()
 @click.argument('pdf_path', type=click.Path(exists=True))

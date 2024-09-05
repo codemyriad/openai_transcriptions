@@ -9,6 +9,7 @@ setup(
         "requests",
         "click",
         "PyPDF2",
+        "pdf2image",
     ],
     author="Your Name",
     author_email="your.email@example.com",
