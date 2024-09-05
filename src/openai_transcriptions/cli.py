@@ -3,6 +3,7 @@ import tempfile
 import os
 from PyPDF2 import PdfReader
 from pdf2image import convert_from_path
+import pytesseract
 
 def process_page(pdf_path, page_number):
     """Process a single page of a PDF file."""
@@ -19,7 +20,13 @@ def process_page(pdf_path, page_number):
             images[0].save(tiff_path, format="TIFF")
             click.echo(f"Created temporary TIFF file: {tiff_path}")
             
-            # TODO: Add further processing of the TIFF file here
+            # Perform OCR on the TIFF file
+            try:
+                text = pytesseract.image_to_string(tiff_path)
+                click.echo(f"OCR Result for page {page_number}:")
+                click.echo(text)
+            except pytesseract.TesseractError as e:
+                click.echo(f"Error performing OCR on page {page_number}: {str(e)}")
         else:
             click.echo(f"Failed to convert page {page_number} to image")
 

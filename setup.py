@@ -10,6 +10,7 @@ setup(
         "click",
         "PyPDF2",
         "pdf2image",
+        "pytesseract",
     ],
     author="Your Name",
     author_email="your.email@example.com",
