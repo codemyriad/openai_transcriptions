@@ -88,7 +88,6 @@ def submit_to_chatgpt(image_path, ocr_text, destination_path):
     payload = {
         "model": "gpt-4o",
         "messages": messages,
-        "max_tokens": 500
     }
 
     # Make the API call
