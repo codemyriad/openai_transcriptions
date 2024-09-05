@@ -1,1 +1,2 @@
-# This file is intentionally left empty to mark this directory as a Python package.
+# Import the PROMPT constant from the config module
+from .config import PROMPT
