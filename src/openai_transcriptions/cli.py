@@ -20,18 +20,109 @@ def get_text_path(output_dir, page_number):
     """Get the path for the OCR text file."""
     return os.path.join(output_dir, f"page{page_number}-ocr.txt")
 
+def get_chatgpt_text_path(output_dir, page_number):
+    """Get the path for the ChatGPT transcription."""
+    return os.path.join(output_dir, f"page{page_number}-chatgpt-transcription.txt")
+
 def get_default_cores():
     """Calculate the default number of cores to use."""
     total_cores = multiprocessing.cpu_count()
     return max(1, total_cores - 2)  # Ensure at least 1 core is used
 
-def analyze_image_and_text(image_path, ocr_text):
-    """Analyze the image and OCRed text."""
+def submit_to_chatgpt(image_path, ocr_text, destination_path):
+    """Sumbit the image and the OCR text to ChatGPT using our PROMPT.
+    Does something similar to this:
+
+    import requests
+    import json
+
+    # Replace with your actual OpenAI API key
+    OPENAI_API_KEY = 'your-api-key'
+
+    # The path to the image file you want to upload
+    image_path = '/path/to/your/image.jpg'
+
+    # Step 1: Upload the image to the OpenAI API
+
+    def upload_image(image_path):
+        url = "https://api.openai.com/v1/files"
+        headers = {
+            "Authorization": f"Bearer {OPENAI_API_KEY}"
+        }
+
+        with open(image_path, 'rb') as file:
+            files = {
+                'file': file,
+            }
+            data = {
+                'purpose': 'vision'
+            }
+            response = requests.post(url, headers=headers, files=files, data=data)
+
+        if response.status_code == 200:
+            print("Image uploaded successfully!")
+            return response.json()['id']  # Return the file ID for further use
+        else:
+            print(f"Failed to upload image. Status code: {response.status_code}")
+            print("Response:", response.text)
+            return None
+
+    # Step 2: Use the chat/completions endpoint to ask "What's in this image?"
+
+    def ask_about_image(file_id):
+        url = "https://api.openai.com/v1/chat/completions"
+        headers = {
+            "Authorization": f"Bearer {OPENAI_API_KEY}",
+            "Content-Type": "application/json"
+        }
+
+        # JSON payload for the chat request
+        data = {
+            "model": "gpt-4-vision",  # Assuming vision-capable model (replace as needed)
+            "messages": [
+                {
+                    "role": "user",
+                    "content": "What's in this image?",
+                    "function_call": {
+                        "name": "describe_image",
+                        "arguments": {
+                            "file_id": file_id
+                        }
+                    }
+                }
+            ],
+            "max_tokens": 300
+        }
+
+        response = requests.post(url, headers=headers, data=json.dumps(data))
+
+        if response.status_code == 200:
+            return response.json()
+        else:
+            print(f"Failed to process the image. Status code: {response.status_code}")
+            print("Response:", response.text)
+            return None
+
+    # Running the full process
+
+    # Upload the image and get the file ID
+    file_id = upload_image(image_path)
+
+    if file_id:
+        # Use the file ID to ask the question
+        result = ask_about_image(file_id)
+        if result:
+            print("Response from chat API:", result)
+
+
+    """
     with Image.open(image_path) as img:
         width, height = img.size
-    
     click.echo(f"Image size: {width}x{height} pixels")
     click.echo(f"OCRed text length: {len(ocr_text)} characters")
+    click.echo("Uploading the file")
+    click.echo("Getting transcription from ChatGPT")
+    click.echo(f"Transcription saved to {destination_path}")
 
 def process_page(pdf_path, page_number, lang='ita', num_cores=None):
     """Process a single page of a PDF file."""
@@ -79,7 +170,8 @@ def process_page(pdf_path, page_number, lang='ita', num_cores=None):
             text = f.read()
 
     click.echo("Analyzing image and text:")
-    analyze_image_and_text(tiff_path, text)
+    destination_path = get_chatgpt_text_path(output_dir, page_number)
+    submit_to_chatgpt(tiff_path, text, destination_path)
     click.echo("Done! Time to submit the text to ChatGPT together with the original image and our prompt")
 
 @click.command()
