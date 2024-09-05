@@ -63,4 +63,4 @@ The tool will create a directory with the same name as the input PDF file, conta
 
 ## License
 
-This project is licensed under the MIT License.
+This project is licensed under the GNU General Public License (GPL).
