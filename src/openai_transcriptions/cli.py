@@ -1,10 +1,23 @@
 import click
-import tempfile
 import os
 from PyPDF2 import PdfReader
 from pdf2image import convert_from_path
 import pytesseract
 from PIL import Image
+
+def get_output_directory(pdf_path):
+    """Get the output directory for intermediate results."""
+    pdf_dir = os.path.dirname(pdf_path)
+    pdf_name = os.path.splitext(os.path.basename(pdf_path))[0]
+    return os.path.join(pdf_dir, pdf_name)
+
+def get_tiff_path(output_dir, page_number):
+    """Get the path for the TIFF file."""
+    return os.path.join(output_dir, f"page{page_number}.tiff")
+
+def get_text_path(output_dir, page_number):
+    """Get the path for the text file."""
+    return os.path.join(output_dir, f"page{page_number}.txt")
 
 def analyze_image_and_text(image_path, ocr_text):
     """Analyze the image and OCRed text."""
@@ -18,28 +31,47 @@ def process_page(pdf_path, page_number, lang='ita'):
     """Process a single page of a PDF file."""
     click.echo(f"Processing page {page_number} of {pdf_path}")
 
-    # Create a temporary directory to store the TIFF file
-    with tempfile.TemporaryDirectory() as temp_dir:
+    output_dir = get_output_directory(pdf_path)
+    os.makedirs(output_dir, exist_ok=True)
+
+    tiff_path = get_tiff_path(output_dir, page_number)
+    text_path = get_text_path(output_dir, page_number)
+
+    # Check if TIFF file already exists
+    if not os.path.exists(tiff_path):
         # Convert the specific page to an image with a height of 3000 pixels
         images = convert_from_path(pdf_path, first_page=page_number, last_page=page_number, size=(None, 3000))
 
         if images:
             # Save the image as a TIFF file
-            tiff_path = os.path.join(temp_dir, f"page_{page_number}.tiff")
             images[0].save(tiff_path, format="TIFF")
-            click.echo(f"Created temporary TIFF file: {tiff_path}")
-
-            # Perform OCR on the TIFF file
-            try:
-                click.echo(f"Performing OCR on the page using language: {lang}")
-                text = pytesseract.image_to_string(tiff_path, lang=lang)
-                click.echo("OCR completed. Analyzing image and text:")
-                analyze_image_and_text(tiff_path, text)
-                click.echo("Done! Time to submit the text to ChatGPT together with the original image and our prompt")
-            except pytesseract.TesseractError as e:
-                click.echo(f"Error performing OCR on page {page_number}: {str(e)}")
+            click.echo(f"Created TIFF file: {tiff_path}")
         else:
             click.echo(f"Failed to convert page {page_number} to image")
+            return
+    else:
+        click.echo(f"TIFF file already exists: {tiff_path}")
+
+    # Check if text file already exists
+    if not os.path.exists(text_path):
+        # Perform OCR on the TIFF file
+        try:
+            click.echo(f"Performing OCR on the page using language: {lang}")
+            text = pytesseract.image_to_string(tiff_path, lang=lang)
+            with open(text_path, 'w', encoding='utf-8') as f:
+                f.write(text)
+            click.echo(f"OCR completed. Text saved to: {text_path}")
+        except pytesseract.TesseractError as e:
+            click.echo(f"Error performing OCR on page {page_number}: {str(e)}")
+            return
+    else:
+        click.echo(f"Text file already exists: {text_path}")
+        with open(text_path, 'r', encoding='utf-8') as f:
+            text = f.read()
+
+    click.echo("Analyzing image and text:")
+    analyze_image_and_text(tiff_path, text)
+    click.echo("Done! Time to submit the text to ChatGPT together with the original image and our prompt")
 
 @click.command()
 @click.argument('pdf_path', type=click.Path(exists=True))
