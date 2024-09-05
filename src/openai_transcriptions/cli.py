@@ -4,6 +4,15 @@ import os
 from PyPDF2 import PdfReader
 from pdf2image import convert_from_path
 import pytesseract
+from PIL import Image
+
+def analyze_image_and_text(image_path, ocr_text):
+    """Analyze the image and OCRed text."""
+    with Image.open(image_path) as img:
+        width, height = img.size
+    
+    click.echo(f"Image size: {width}x{height} pixels")
+    click.echo(f"OCRed text length: {len(ocr_text)} characters")
 
 def process_page(pdf_path, page_number, lang='ita'):
     """Process a single page of a PDF file."""
@@ -24,8 +33,8 @@ def process_page(pdf_path, page_number, lang='ita'):
             try:
                 click.echo(f"Performing OCR on the page using language: {lang}")
                 text = pytesseract.image_to_string(tiff_path, lang=lang)
-                click.echo("OCR completed. Text extracted:")
-                click.echo(text)
+                click.echo("OCR completed. Analyzing image and text:")
+                analyze_image_and_text(tiff_path, text)
                 click.echo("Done! Time to submit the text to ChatGPT together with the original image and our prompt")
             except pytesseract.TesseractError as e:
                 click.echo(f"Error performing OCR on page {page_number}: {str(e)}")
