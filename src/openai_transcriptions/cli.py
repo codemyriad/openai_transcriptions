@@ -33,6 +33,7 @@ import requests
 import json
 import base64
 import os
+import io
 from openai_transcriptions.config import PROMPT
 
 def submit_to_chatgpt(image_path, ocr_text, destination_path):
@@ -43,12 +44,14 @@ def submit_to_chatgpt(image_path, ocr_text, destination_path):
 
     with Image.open(image_path) as img:
         width, height = img.size
-    click.echo(f"Image size: {width}x{height} pixels")
-    click.echo(f"OCRed text length: {len(ocr_text)} characters")
+        click.echo(f"Image size: {width}x{height} pixels")
+        click.echo(f"OCRed text length: {len(ocr_text)} characters")
 
-    # Encode the image
-    with open(image_path, "rb") as image_file:
-        encoded_image = base64.b64encode(image_file.read()).decode('utf-8')
+        # Convert image to PNG
+        png_buffer = io.BytesIO()
+        img.save(png_buffer, format="PNG")
+        png_buffer.seek(0)
+        encoded_image = base64.b64encode(png_buffer.getvalue()).decode('utf-8')
 
     click.echo("Uploading the file and getting transcription from ChatGPT")
 
