@@ -33,6 +33,7 @@ import requests
 import json
 import base64
 import os
+from openai_transcriptions.config import PROMPT
 
 def submit_to_chatgpt(image_path, ocr_text, destination_path):
     """Submit the image and the OCR text to ChatGPT using our PROMPT."""
