@@ -61,14 +61,14 @@ def submit_to_chatgpt(image_path, ocr_text, destination_path):
     messages = [
         {
             "role": "system",
-            "content": "You are an expert in analyzing documents and images. Your task is to provide a detailed transcription and analysis of the image provided, considering both the visual content and the OCR text."
+            "content": "Sei un esperto nel trascrivere articoli di giornale riconoscendo il testo e migliorando trascrizioni OCR."
         },
         {
             "role": "user",
             "content": [
                 {
                     "type": "text",
-                    "text": f"Here's the OCR text extracted from the image:\n\n{ocr_text}\n\nPlease analyze the image and provide a detailed transcription, correcting any OCR errors and formatting issues. Also, describe any visual elements present in the image."
+                    "text": f"{PROMPT}\n\n{ocr_text}\n\n"
                 },
                 {
                     "type": "image_url",
@@ -93,11 +93,11 @@ def submit_to_chatgpt(image_path, ocr_text, destination_path):
     if response.status_code == 200:
         result = response.json()
         transcription = result['choices'][0]['message']['content']
-        
+
         # Save the transcription to the destination file
         with open(destination_path, 'w', encoding='utf-8') as f:
             f.write(transcription)
-        
+
         click.echo(f"Transcription saved to {destination_path}")
     else:
         click.echo(f"Error: Unable to get transcription. Status code: {response.status_code}")
