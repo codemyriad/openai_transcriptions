@@ -16,8 +16,8 @@ def get_tiff_path(output_dir, page_number):
     return os.path.join(output_dir, f"page{page_number}.tiff")
 
 def get_text_path(output_dir, page_number):
-    """Get the path for the text file."""
-    return os.path.join(output_dir, f"page{page_number}.txt")
+    """Get the path for the OCR text file."""
+    return os.path.join(output_dir, f"page{page_number}-ocr.txt")
 
 def analyze_image_and_text(image_path, ocr_text):
     """Analyze the image and OCRed text."""
@@ -35,7 +35,7 @@ def process_page(pdf_path, page_number, lang='ita'):
     os.makedirs(output_dir, exist_ok=True)
 
     tiff_path = get_tiff_path(output_dir, page_number)
-    text_path = get_text_path(output_dir, page_number)
+    ocr_text_path = get_text_path(output_dir, page_number)
 
     # Check if TIFF file already exists
     if not os.path.exists(tiff_path):
@@ -52,21 +52,21 @@ def process_page(pdf_path, page_number, lang='ita'):
     else:
         click.echo(f"TIFF file already exists: {tiff_path}")
 
-    # Check if text file already exists
-    if not os.path.exists(text_path):
+    # Check if OCR text file already exists
+    if not os.path.exists(ocr_text_path):
         # Perform OCR on the TIFF file
         try:
             click.echo(f"Performing OCR on the page using language: {lang}")
             text = pytesseract.image_to_string(tiff_path, lang=lang)
-            with open(text_path, 'w', encoding='utf-8') as f:
+            with open(ocr_text_path, 'w', encoding='utf-8') as f:
                 f.write(text)
-            click.echo(f"OCR completed. Text saved to: {text_path}")
+            click.echo(f"OCR completed. Text saved to: {ocr_text_path}")
         except pytesseract.TesseractError as e:
             click.echo(f"Error performing OCR on page {page_number}: {str(e)}")
             return
     else:
-        click.echo(f"Text file already exists: {text_path}")
-        with open(text_path, 'r', encoding='utf-8') as f:
+        click.echo(f"OCR text file already exists: {ocr_text_path}")
+        with open(ocr_text_path, 'r', encoding='utf-8') as f:
             text = f.read()
 
     click.echo("Analyzing image and text:")
