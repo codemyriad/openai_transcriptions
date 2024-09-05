@@ -83,7 +83,7 @@ def submit_to_chatgpt(image_path, ocr_text, destination_path):
 
     # Prepare the payload
     payload = {
-        "model": "gpt-4-vision-preview",
+        "model": "gpt-4o",
         "messages": messages,
         "max_tokens": 500
     }
