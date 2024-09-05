@@ -1,4 +1,5 @@
 import click
+from PyPDF2 import PdfReader
 
 def process_page(pdf_path, page_number):
     """Process a single page of a PDF file."""
@@ -10,11 +11,16 @@ def process_page(pdf_path, page_number):
 def process_pdf(pdf_path, page):
     """Process a PDF file and optionally specify a page number."""
     click.echo(f"Processing PDF: {pdf_path}")
+    
+    reader = PdfReader(pdf_path)
+    num_pages = len(reader.pages)
+    
     if page:
-        process_page(pdf_path, page)
+        if 1 <= page <= num_pages:
+            process_page(pdf_path, page)
+        else:
+            click.echo(f"Error: Page {page} is out of range. The PDF has {num_pages} pages.")
     else:
-        click.echo("Processing all pages")
-        # Assuming we have a way to get the total number of pages
-        # For now, let's just process pages 1 to 5 as an example
-        for page_num in range(1, 6):
+        click.echo(f"Processing all {num_pages} pages")
+        for page_num in range(1, num_pages + 1):
             process_page(pdf_path, page_num)
