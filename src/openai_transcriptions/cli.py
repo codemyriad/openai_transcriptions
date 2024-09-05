@@ -5,7 +5,7 @@ from PyPDF2 import PdfReader
 from pdf2image import convert_from_path
 import pytesseract
 
-def process_page(pdf_path, page_number):
+def process_page(pdf_path, page_number, lang='ita'):
     """Process a single page of a PDF file."""
     click.echo(f"Processing page {page_number} of {pdf_path}")
 
@@ -22,8 +22,10 @@ def process_page(pdf_path, page_number):
 
             # Perform OCR on the TIFF file
             try:
-                click.echo("Performing OCR on the page...")
-                text = pytesseract.image_to_string(tiff_path)
+                click.echo(f"Performing OCR on the page using language: {lang}")
+                text = pytesseract.image_to_string(tiff_path, lang=lang)
+                click.echo("OCR completed. Text extracted:")
+                click.echo(text)
                 click.echo("Done! Time to submit the text to ChatGPT together with the original image and our prompt")
             except pytesseract.TesseractError as e:
                 click.echo(f"Error performing OCR on page {page_number}: {str(e)}")
@@ -33,7 +35,8 @@ def process_page(pdf_path, page_number):
 @click.command()
 @click.argument('pdf_path', type=click.Path(exists=True))
 @click.option('--page', type=int, default=None, help='Page number to process (optional)')
-def process_pdf(pdf_path, page):
+@click.option('--lang', type=str, default='ita', help='Language for OCR (default: Italian)')
+def process_pdf(pdf_path, page, lang):
     """Process a PDF file and optionally specify a page number."""
     click.echo(f"Processing PDF: {pdf_path}")
 
@@ -42,10 +45,10 @@ def process_pdf(pdf_path, page):
 
     if page:
         if 1 <= page <= num_pages:
-            process_page(pdf_path, page)
+            process_page(pdf_path, page, lang)
         else:
             click.echo(f"Error: Page {page} is out of range. The PDF has {num_pages} pages.")
     else:
         click.echo(f"Processing all {num_pages} pages")
         for page_num in range(1, num_pages + 1):
-            process_page(pdf_path, page_num)
+            process_page(pdf_path, page_num, lang)
