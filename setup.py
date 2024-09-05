@@ -8,6 +8,7 @@ setup(
     install_requires=[
         "requests",
         "click",
+        "PyPDF2",
     ],
     author="Your Name",
     author_email="your.email@example.com",
